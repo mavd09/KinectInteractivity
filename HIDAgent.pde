@@ -1,8 +1,13 @@
 public class HIDAgent extends Agent {
+  // array of sensitivities that will multiply the sliders input
+  // found pretty much as trial an error
   float [] sens = {4, 4, 7, 0, 5, 5};
   
   public HIDAgent(Scene scn) {
     super(scn.inputHandler());
+    // SN_ID will be assigned an unique id with 6 DOF's. The id may be
+    // used to bind (frame) actions to the gesture, pretty much in
+    // the same way as it's done with the LEFT and RIGHT mouse gestures.
     SN_ID = MotionShortcut.registerID(6, "SN_SENSOR");
     addGrabber(scene.eyeFrame());
     setDefaultGrabber(scene.eyeFrame());
@@ -22,7 +27,7 @@ public class HIDAgent extends Agent {
   // note that we pass the id of the gesture
   @Override
   public DOF6Event feed() {
-    return new DOF6Event(currentPositionX, currentPositionY, 0, 0, 0, 0, BogusEvent.NO_MODIFIER_MASK, SN_ID);
+    return new DOF6Event(currentEye.x, currentEye.y, 0, 0, 0, 0, BogusEvent.NO_MODIFIER_MASK, SN_ID);
   }
   
   public float[] getSens(){

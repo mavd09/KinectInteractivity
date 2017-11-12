@@ -1,6 +1,6 @@
 /**
- * Knowledge Graph vizualization tool.
- * by Alan Jesus Navarro Montes.
+ * Kinect Interactivity using proscene
+ * by Alan Jesus Navarro Montes, Manuel Alejandro Vergara Diaz.
  *
  * Press 'h' to display the key shortcuts and mouse bindings in the console.
  */
@@ -35,13 +35,7 @@ static int SN_ID;
 // Kinect Library object
 KinectTrack kinectAgent;
 
-float rightHandX = 0;
-float rightHandY = 0;
-float rightHandZ = 0;
-
-float leftHandX = 0;
-float leftHandY = 0;
-float leftHandZ = 0;
+Position rightHand, leftHand, currentEye;
 
 float kinectDepthX = 320;
 float kinectDepthY = 240;
@@ -52,15 +46,11 @@ float centerKinectDepthZ = 10500;
 float handOffset = 50;
 float handOffsetZ = 1000;
 
-float currentPositionX = 0;
-float currentPositionY = 0;
-float currentPositionZ = 0;
-
 
 void setup() {
   size(600, 600, P3D);
   canvas = createGraphics(width, height, P3D);    
-  scene = new Scene(this, (PGraphics3D) canvas);  
+  scene = new Scene(this, (PGraphics3D) canvas);
   //colorMode(HSB, 255);
   
   colors = new HashMap<Integer, Integer>();
@@ -90,6 +80,12 @@ void setup() {
 
   frameRate(1000);
   
+  // Init Positions 
+  rightHand = new Position();
+  leftHand = new Position();
+  currentEye = new Position();
+  
+  // Kinect specifics
   hidAgent = new HIDAgent(scene);
   kinectAgent = new KinectTrack(this);
   scene.eyeFrame().setMotionBinding(SN_ID, "translateRotateXYZ");
@@ -145,48 +141,67 @@ void draw() {
   
   
   image(kinectAgent.kinect.GetDepth(), 0, 0, kinectDepthX, kinectDepthY);
+  
+  drawSafeZone();
+  
   for (int i=0; i<kinectAgent.bodies.size (); i++) 
   {
     
-    rightHandX = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).x * kinectDepthX;
-    rightHandY = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).y * kinectDepthY;
+    rightHand.x = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).x * kinectDepthX;
+    rightHand.y = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).y * kinectDepthY;
+    rightHand.z = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).z;
     
-    leftHandX = kinectAgent.getLeftHandPosition(kinectAgent.bodies.get(i)).x * kinectDepthX;
-    leftHandY = kinectAgent.getLeftHandPosition(kinectAgent.bodies.get(i)).y * kinectDepthY;
     
-    processKinectHand(rightHandX, rightHandY);
-    //processKinectHand(leftHandX, leftHandY);
+    leftHand.x = kinectAgent.getLeftHandPosition(kinectAgent.bodies.get(i)).x * kinectDepthX;
+    leftHand.y = kinectAgent.getLeftHandPosition(kinectAgent.bodies.get(i)).y * kinectDepthY;
+    leftHand.z = kinectAgent.getLeftHandPosition(kinectAgent.bodies.get(i)).z;
+    
+    processKinectMovement();
   }
   
 }
 
-// processing rotation movement
-public void processKinectHand(float x , float y){
-  
+private void drawSafeZone() {
   strokeWeight(2);
   noFill();
   ellipse(centerKinectDepthX, centerKinectDepthY, handOffset*2, handOffset*2);
+}
+
+private void drawHandsHelpers() {
   fill(255, 0 ,0);
   noStroke();
-  ellipse(x, y, 25, 25);
+  ellipse(rightHand.x, rightHand.y, 25, 25);
+  fill(0, 255,0);
+  ellipse(leftHand.x, leftHand.y, 25, 25);
+} 
+
+// processing rotation movement
+public void processKinectMovement(){
   
-  float dist = sqrt((centerKinectDepthX - x)*(centerKinectDepthX - x) + (centerKinectDepthY - y)*(centerKinectDepthY - y));
+  drawHandsHelpers();
+  processRightHand(); 
+  
+}
+
+private void processRightHand() {
+  float dist = sqrt((centerKinectDepthX - rightHand.x)*(centerKinectDepthX - rightHand.x) + 
+  (centerKinectDepthY - rightHand.y)*(centerKinectDepthY - rightHand.y));
   
   float dx = 0.3;
-  currentPositionX = 0.0;
-  currentPositionY = 0.0;
+  // Only process the changes where the hand is currently.
+  currentEye = new Position();
    //processing x translatation
   if (dist > handOffset) {
     
-    if (x > centerKinectDepthX + handOffset)
-      currentPositionX = dx;
-    if (x < centerKinectDepthX - handOffset)
-      currentPositionX = -dx;
+    if (rightHand.x > centerKinectDepthX + handOffset)
+      currentEye.x = dx;
+    if (rightHand.x < centerKinectDepthX - handOffset)
+      currentEye.x = -dx;
       
-    if (y > centerKinectDepthY + handOffset)
-      currentPositionY = dx;
-    if (y < centerKinectDepthY - handOffset)
-      currentPositionY = -dx;
+    if (rightHand.y > centerKinectDepthY + handOffset)
+      currentEye.y = dx;
+    if (rightHand.y < centerKinectDepthY - handOffset)
+      currentEye.y = -dx;
   }
 }
 
