@@ -144,8 +144,7 @@ void draw() {
   
   drawSafeZone();
   
-  for (int i=0; i<kinectAgent.bodies.size (); i++) 
-  {
+  for (int i=0; i<min(1, kinectAgent.bodies.size()); i++) {
     
     rightHand.x = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).x * kinectDepthX;
     rightHand.y = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).y * kinectDepthY;
@@ -177,10 +176,8 @@ private void drawHandsHelpers() {
 
 // processing rotation movement
 public void processKinectMovement(){
-  
   drawHandsHelpers();
   processRightHand(); 
-  
 }
 
 private void processRightHand() {
