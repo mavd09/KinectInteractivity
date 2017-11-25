@@ -15,4 +15,5 @@ public class Position {
   public Position createCopy() {
     return new Position(x, y ,z);
   }
+
 }
