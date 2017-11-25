@@ -143,18 +143,15 @@ void draw() {
   image(kinectAgent.kinect.GetDepth(), 0, 0, kinectDepthX, kinectDepthY);
   
   drawSafeZone();
-  
   for (int i=0; i<min(1, kinectAgent.bodies.size()); i++) {
-    
+    // Get right hand position
     rightHand.x = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).x * kinectDepthX;
     rightHand.y = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).y * kinectDepthY;
     rightHand.z = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).z;
-    
-    
+    // Get left hand position
     leftHand.x = kinectAgent.getLeftHandPosition(kinectAgent.bodies.get(i)).x * kinectDepthX;
     leftHand.y = kinectAgent.getLeftHandPosition(kinectAgent.bodies.get(i)).y * kinectDepthY;
     leftHand.z = kinectAgent.getLeftHandPosition(kinectAgent.bodies.get(i)).z;
-    
     processKinectMovement();
   }
   
@@ -177,27 +174,39 @@ private void drawHandsHelpers() {
 // processing rotation movement
 public void processKinectMovement(){
   drawHandsHelpers();
-  processRightHand(); 
-}
-
-private void processRightHand() {
-  float dist = sqrt((centerKinectDepthX - rightHand.x)*(centerKinectDepthX - rightHand.x) + 
-  (centerKinectDepthY - rightHand.y)*(centerKinectDepthY - rightHand.y));
-  
-  float dx = 0.3;
   // Only process the changes where the hand is currently.
   currentEye = new Position();
-   //processing x translatation
+  if (isInSafeZone(leftHand)) {
+    processHandTranslation(rightHand);
+  } else if(isInSafeZone(rightHand)) {
+    processHandTranslation(leftHand);
+  } else {
+    // TODO: rotations
+  }
+  
+}
+
+private boolean isInSafeZone(Position hand){
+  float dist = sqrt((centerKinectDepthX - hand.x)*(centerKinectDepthX - hand.x) + 
+  (centerKinectDepthY - hand.y)*(centerKinectDepthY - hand.y));
+  return dist <= handOffset;
+}
+
+private void processHandTranslation(Position hand) {
+  float dist = sqrt((centerKinectDepthX - hand.x)*(centerKinectDepthX - hand.x) + 
+  (centerKinectDepthY - hand.y)*(centerKinectDepthY - hand.y));
+  float dx = 0.3;
+   //processing translation
   if (dist > handOffset) {
-    
-    if (rightHand.x > centerKinectDepthX + handOffset)
+    // X-axis
+    if (hand.x > centerKinectDepthX + handOffset)
       currentEye.x = dx;
-    if (rightHand.x < centerKinectDepthX - handOffset)
+    if (hand.x < centerKinectDepthX - handOffset)
       currentEye.x = -dx;
-      
-    if (rightHand.y > centerKinectDepthY + handOffset)
+    // Y-axis
+    if (hand.y > centerKinectDepthY + handOffset)
       currentEye.y = dx;
-    if (rightHand.y < centerKinectDepthY - handOffset)
+    if (hand.y < centerKinectDepthY - handOffset)
       currentEye.y = -dx;
   }
 }
