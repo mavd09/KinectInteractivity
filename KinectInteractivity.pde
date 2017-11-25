@@ -1,12 +1,11 @@
 /**
  * Kinect Interactivity using proscene
  * by Alan Jesus Navarro Montes, Manuel Alejandro Vergara Diaz.
- *
- * Press 'h' to display the key shortcuts and mouse bindings in the console.
  */
+ 
+import java.util.Map;
 
 import remixlab.proscene.*;
-import java.util.Map;
 import remixlab.dandelion.geom.*;
 import remixlab.bias.*;
 import remixlab.bias.event.*;
@@ -28,9 +27,6 @@ JSONObject json;
 HashMap<Integer, Integer> colors;
 HashMap<Integer, FloatList> groupCenter;
 
-static int SN_ID;
-KinectTrack kinectAgent;
-HIDAgent hidAgent;  
 KinectInteractivityScene kis;
 
 void setup() {
@@ -66,15 +62,7 @@ void setup() {
 
   frameRate(1000);
   
-  // Kinect specifics
-  hidAgent = new HIDAgent(scene);
-  kinectAgent = new KinectTrack(this);
-  scene.eyeFrame().setMotionBinding(SN_ID, "translateRotateXYZ");
-
-  kinectAgent.setUpBodyData();
-  
-  //kis = new KinectInteractivityScene( kinectAgent, hidAgent );
-  
+  kis = new KinectInteractivityScene( this, scene );
 }
 
 void generatePosition(int node, int group) {
@@ -120,10 +108,8 @@ void draw() {
   popMatrix();
   scene.endDraw();
   scene.display();
-  smooth();
-  frameRate(1);
   
-  //kis.process();
+  kis.process();
 }
 
 PShape drawNode(int group) {
@@ -139,39 +125,4 @@ color getColor(int group) {
   }
   colors.put(group,color(random(0,255), random(0,255), random(0,255)));
   return colors.get(group);
-}
-
-
-// kinect4WinSDK updating default methods
-void appearEvent( SkeletonData _s ) {
-  if( _s.trackingState == Kinect.NUI_SKELETON_NOT_TRACKED ) {
-    return ;
-  }
-  synchronized( kinectAgent.bodies ) {
-    kinectAgent.bodies.add(_s);
-  }
-}
-
-void disappearEvent( SkeletonData _s ) {
-  synchronized( kinectAgent.bodies ) {
-    for( int i = kinectAgent.bodies.size()-1; i >= 0; i-- ) {
-      if( _s.dwTrackingID == kinectAgent.bodies.get(i).dwTrackingID ) {
-        kinectAgent.bodies.remove(i);
-      }
-    }
-  }
-}
- 
-void moveEvent( SkeletonData _b, SkeletonData _a ) {
-  if( _a.trackingState == Kinect.NUI_SKELETON_NOT_TRACKED ) {
-    return ;
-  }
-  synchronized( kinectAgent.bodies ) {
-    for( int i = kinectAgent.bodies.size()-1; i >= 0; i-- ) {
-      if( _b.dwTrackingID == kinectAgent.bodies.get(i).dwTrackingID ) {
-        kinectAgent.bodies.get(i).copy(_a);
-        break;
-      }
-    }
-  }
 }

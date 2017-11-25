@@ -1,3 +1,6 @@
+static int SN_ID;
+private KinectTrack kinectAgent;
+
 public class KinectInteractivityScene {
   
   final static float DEFAULT_WIDTH_KINECT_SCREEN = 320;
@@ -14,21 +17,24 @@ public class KinectInteractivityScene {
   
   private float delta = 0.3;
   
-  private KinectTrack kinectAgent;
   private HIDAgent hidAgent;  
   private Position rightHand, leftHand;
   
-  public KinectInteractivityScene( KinectTrack kinectAgent, HIDAgent hidAgent ) {
+  public KinectInteractivityScene( PApplet papplet, Scene scene ) {
     // Init Positions 
     rightHand = new Position();
     leftHand = new Position();
     
-    this.kinectAgent = kinectAgent;
-    this.hidAgent = hidAgent;
+    // Kinect specifics
+    hidAgent = new HIDAgent(scene);
+    kinectAgent = new KinectTrack(papplet);
+    scene.eyeFrame().setMotionBinding(SN_ID, "translateRotateXYZ");
+     
+    kinectAgent.setUpBodyData();
   }
   
-  public KinectInteractivityScene( KinectTrack kinectAgent, HIDAgent hidAgent, float widthKinectScreen, float heightKinectScreen ) {
-    this( kinectAgent, hidAgent );
+  public KinectInteractivityScene( PApplet papplet, Scene scene, float widthKinectScreen, float heightKinectScreen ) {
+    this( papplet, scene );
     
     this.widthKinectScreen = widthKinectScreen;
     this.heightKinectScreen = heightKinectScreen;
@@ -38,7 +44,7 @@ public class KinectInteractivityScene {
   }
   
   public void process() {
-    image(kinectAgent.kinect.GetDepth(), 0, 0, centerKinectScreenX, centerKinectScreenY);
+    image(kinectAgent.kinect.GetDepth(), 0, 0, widthKinectScreen, heightKinectScreen);
     drawSafeZone();
     for( int i = 0; i < min( 1, kinectAgent.bodies.size() ); i++ ) {
       // Get right hand position
@@ -123,4 +129,38 @@ public class KinectInteractivityScene {
     return ( dist <= handOffset );
   }
   
+}
+
+// kinect4WinSDK updating default methods
+void appearEvent( SkeletonData _s ) {
+  if( _s.trackingState == Kinect.NUI_SKELETON_NOT_TRACKED ) {
+    return ;
+  }
+  synchronized( kinectAgent.bodies ) {
+    kinectAgent.bodies.add(_s);
+  }
+}
+
+void disappearEvent( SkeletonData _s ) {
+  synchronized( kinectAgent.bodies ) {
+    for( int i = kinectAgent.bodies.size()-1; i >= 0; i-- ) {
+      if( _s.dwTrackingID == kinectAgent.bodies.get(i).dwTrackingID ) {
+        kinectAgent.bodies.remove(i);
+      }
+    }
+  }
+}
+ 
+void moveEvent( SkeletonData _b, SkeletonData _a ) {
+  if( _a.trackingState == Kinect.NUI_SKELETON_NOT_TRACKED ) {
+    return ;
+  }
+  synchronized( kinectAgent.bodies ) {
+    for( int i = kinectAgent.bodies.size()-1; i >= 0; i-- ) {
+      if( _b.dwTrackingID == kinectAgent.bodies.get(i).dwTrackingID ) {
+        kinectAgent.bodies.get(i).copy(_a);
+        break;
+      }
+    }
+  } 
 }
