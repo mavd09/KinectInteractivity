@@ -41,10 +41,9 @@ float kinectDepthX = 320;
 float kinectDepthY = 240;
 float centerKinectDepthX = (kinectDepthX)/2;
 float centerKinectDepthY = (kinectDepthY)/2;
-
-float centerKinectDepthZ = 10500;
 float handOffset = 50;
-float handOffsetZ = 1000;
+float offsetZ = 1000;
+float delta = 0.3;
 
 
 void setup() {
@@ -177,13 +176,28 @@ public void processKinectMovement(){
   // Only process the changes where the hand is currently.
   currentEye = new Position();
   if (isInSafeZone(leftHand)) {
-    processHandTranslation(rightHand);
+    if (isInSafeZone(rightHand)) {
+      processZoom();
+    } else {
+      processHandTranslation(rightHand);
+    }
   } else if(isInSafeZone(rightHand)) {
     processHandTranslation(leftHand);
   } else {
     // TODO: rotations
   }
   
+}
+
+private void processZoom(){
+  float initialZ = leftHand.z;
+  float z = rightHand.z;
+  if (z > initialZ + offsetZ) {
+    currentEye.z = - delta;
+  }
+  if (z < initialZ - offsetZ) {
+    currentEye.z = + delta; 
+  }
 }
 
 private boolean isInSafeZone(Position hand){
@@ -195,19 +209,18 @@ private boolean isInSafeZone(Position hand){
 private void processHandTranslation(Position hand) {
   float dist = sqrt((centerKinectDepthX - hand.x)*(centerKinectDepthX - hand.x) + 
   (centerKinectDepthY - hand.y)*(centerKinectDepthY - hand.y));
-  float dx = 0.3;
    //processing translation
   if (dist > handOffset) {
     // X-axis
     if (hand.x > centerKinectDepthX + handOffset)
-      currentEye.x = dx;
+      currentEye.x = delta;
     if (hand.x < centerKinectDepthX - handOffset)
-      currentEye.x = -dx;
+      currentEye.x = -delta;
     // Y-axis
     if (hand.y > centerKinectDepthY + handOffset)
-      currentEye.y = dx;
+      currentEye.y = delta;
     if (hand.y < centerKinectDepthY - handOffset)
-      currentEye.y = -dx;
+      currentEye.y = -delta;
   }
 }
 

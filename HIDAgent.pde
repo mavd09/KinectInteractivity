@@ -27,7 +27,7 @@ public class HIDAgent extends Agent {
   // note that we pass the id of the gesture
   @Override
   public DOF6Event feed() {
-    return new DOF6Event(currentEye.x, currentEye.y, 0, 0, 0, 0, BogusEvent.NO_MODIFIER_MASK, SN_ID);
+    return new DOF6Event(currentEye.x, currentEye.y, currentEye.z, 0, 0, 0, BogusEvent.NO_MODIFIER_MASK, SN_ID);
   }
   
   public float[] getSens(){
