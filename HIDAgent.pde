@@ -1,7 +1,7 @@
 public class HIDAgent extends Agent {
   // array of sensitivities that will multiply the sliders input
   // found pretty much as trial an error
-  float [] sens = {4, 4, 7, 0, 5, 5};
+  float [] sens = {4, 4, 7, 3, 5, 5};
   
   public HIDAgent(Scene scn) {
     super(scn.inputHandler());
@@ -27,7 +27,7 @@ public class HIDAgent extends Agent {
   // note that we pass the id of the gesture
   @Override
   public DOF6Event feed() {
-    return new DOF6Event(currentEye.x, currentEye.y, currentEye.z, 0, 0, 0, BogusEvent.NO_MODIFIER_MASK, SN_ID);
+    return new DOF6Event(currentEye.x, currentEye.y, currentEye.z, currentRotation.x, currentRotation.y, currentRotation.z, BogusEvent.NO_MODIFIER_MASK, SN_ID);
   }
   
   public float[] getSens(){

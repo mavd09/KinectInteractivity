@@ -35,14 +35,15 @@ static int SN_ID;
 // Kinect Library object
 KinectTrack kinectAgent;
 
-Position rightHand, leftHand, currentEye;
+Position rightHand, leftHand, currentEye, currentRotation;
 
 float kinectDepthX = 320;
 float kinectDepthY = 240;
 float centerKinectDepthX = (kinectDepthX)/2;
 float centerKinectDepthY = (kinectDepthY)/2;
-float handOffset = 50;
+float handOffset = 30;
 float offsetZ = 1000;
+float offsetRotation = 3000;
 float delta = 0.3;
 
 
@@ -83,6 +84,7 @@ void setup() {
   rightHand = new Position();
   leftHand = new Position();
   currentEye = new Position();
+  currentRotation = new Position();
   
   // Kinect specifics
   hidAgent = new HIDAgent(scene);
@@ -142,6 +144,7 @@ void draw() {
   image(kinectAgent.kinect.GetDepth(), 0, 0, kinectDepthX, kinectDepthY);
   
   drawSafeZone();
+  drawRotationZones();
   for (int i=0; i<min(1, kinectAgent.bodies.size()); i++) {
     // Get right hand position
     rightHand.x = kinectAgent.getRightHandPosition(kinectAgent.bodies.get(i)).x * kinectDepthX;
@@ -162,12 +165,24 @@ private void drawSafeZone() {
   ellipse(centerKinectDepthX, centerKinectDepthY, handOffset*2, handOffset*2);
 }
 
+private void drawRotationZones(){
+  pushStyle();
+  stroke(234, 223, 21);
+  noFill();
+  rect(0, centerKinectDepthY - handOffset, kinectDepthX, handOffset*2);
+  rect(centerKinectDepthX - handOffset, 0, handOffset*2, kinectDepthY);
+  popStyle();
+}
+
 private void drawHandsHelpers() {
+  pushStyle();
   fill(255, 0 ,0);
   noStroke();
   ellipse(rightHand.x, rightHand.y, 25, 25);
   fill(0, 255,0);
   ellipse(leftHand.x, leftHand.y, 25, 25);
+  popStyle();
+ 
 } 
 
 // processing rotation movement
@@ -175,6 +190,7 @@ public void processKinectMovement(){
   drawHandsHelpers();
   // Only process the changes where the hand is currently.
   currentEye = new Position();
+  currentRotation = new Position();
   if (isInSafeZone(leftHand)) {
     if (isInSafeZone(rightHand)) {
       processZoom();
@@ -184,9 +200,40 @@ public void processKinectMovement(){
   } else if(isInSafeZone(rightHand)) {
     processHandTranslation(leftHand);
   } else {
-    // TODO: rotations
+    processRotation();
+  } 
+}
+
+private boolean isInRotationXZone(Position hand){
+  return hand.y > centerKinectDepthY - handOffset && hand.y < centerKinectDepthY + handOffset;
+}
+
+private boolean isInRotationYZone(Position hand){
+  return hand.x > centerKinectDepthX - handOffset && hand.x < centerKinectDepthX + handOffset;
+}
+
+private void processRotation() {
+  if (isInRotationXZone(leftHand) && isInRotationXZone(rightHand)) {
+    currentRotation.y = getRotationValue();
+  } else if (isInRotationYZone(leftHand) && isInRotationYZone(rightHand)) {
+    currentRotation.x = getRotationValue();
+  } else {
+    currentRotation.z = getRotationValue();
   }
-  
+}
+
+private float getRotationValue(){
+  float rightZ = rightHand.z;
+  float leftZ = leftHand.z;
+  float dist = abs(rightZ - leftZ);
+  if (dist > offsetRotation) {
+    if (rightZ < leftZ) {
+      return delta;
+    } else {
+      return -delta;
+    }
+  }
+  return 0;
 }
 
 private void processZoom(){
