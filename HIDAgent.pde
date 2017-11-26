@@ -1,3 +1,5 @@
+import remixlab.bias.*;
+
 public class HIDAgent extends Agent {
   // array of sensitivities that will multiply the sliders input
   // found pretty much as trial an error

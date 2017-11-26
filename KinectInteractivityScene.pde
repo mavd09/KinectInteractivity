@@ -8,8 +8,14 @@ public class KinectInteractivityScene {
   
   final static float DEFAULT_WIDTH_KINECT_SCREEN = 320;
   final static float DEFAULT_HEIGHT_KINECT_SCREEN = 240;
-  final static float DEFAULT_HAND_OFFSET = 40;
+  final static float DEFAULT_HAND_OFFSET = 60;
   final static float DEFAULT_DELTA = 0.3;
+  
+  final static color LEFT_HAND_COLOR = #CC0000;
+  final static color RIGHT_HAND_COLOR = #66CC00;
+  
+  final static float SIZE_HAND_HELPER = 40;
+  final static float DELTA_HAND_HELPER = 5.0;
   
   private float widthKinectScreen = DEFAULT_WIDTH_KINECT_SCREEN;
   private float heightKinectScreen = DEFAULT_HEIGHT_KINECT_SCREEN;
@@ -64,13 +70,21 @@ public class KinectInteractivityScene {
   
   private void drawKinectScreen() {
     scene.beginScreenDrawing();
+    pushStyle();
+    stroke(0, 0, 255);
+    strokeWeight(5);
+    noFill();
+    rectMode(CORNERS);
+    rect(0, 0, widthKinectScreen, heightKinectScreen);
     image(kinectAgent.kinect.GetDepth(), 0, 0, widthKinectScreen, heightKinectScreen);
+    popStyle();
     scene.endScreenDrawing();
   }
   
   private void drawSafeZone() {
     scene.beginScreenDrawing();
     pushStyle();
+    stroke(0, 0, 255);
     strokeWeight(2);
     noFill();
     ellipse(centerKinectScreenX, centerKinectScreenY, handOffset*2, handOffset*2);
@@ -81,7 +95,8 @@ public class KinectInteractivityScene {
   private void drawRotationZones() {
     scene.beginScreenDrawing();
     pushStyle();
-    stroke(234, 223, 21);
+    stroke(0, 0, 255);
+    strokeWeight(2);
     noFill();
     rect(0, centerKinectScreenY - handOffset, widthKinectScreen, handOffset*2);
     rect(centerKinectScreenX - handOffset, 0, handOffset*2, heightKinectScreen);
@@ -92,11 +107,13 @@ public class KinectInteractivityScene {
   private void drawHandsHelpers() {
     scene.beginScreenDrawing();
     pushStyle();
-    fill(255, 0 ,0);
     noStroke();
-    ellipse( rightHand.x, rightHand.y, 25, 25 );
-    fill(0, 255,0);
-    ellipse( leftHand.x, leftHand.y, 25, 25 );
+    fill(RIGHT_HAND_COLOR);
+    float scaleRightHand = 1.0 + (10000-rightHand.z)/offsetZ/DELTA_HAND_HELPER;
+    ellipse( rightHand.x, rightHand.y, SIZE_HAND_HELPER*scaleRightHand, SIZE_HAND_HELPER*scaleRightHand );
+    fill(LEFT_HAND_COLOR);
+    float scaleLeftHand = 1.0 + (10000-leftHand.z)/offsetZ/DELTA_HAND_HELPER;
+    ellipse( leftHand.x, leftHand.y, SIZE_HAND_HELPER*scaleLeftHand, SIZE_HAND_HELPER*scaleLeftHand );
     popStyle();
     scene.endScreenDrawing();
   } 
@@ -152,12 +169,10 @@ public class KinectInteractivityScene {
   }
   
   private void processZoom( ) {
-    float initialZ = leftHand.z;
-    float z = rightHand.z;
-    if (z > initialZ + offsetZ) {
+    if (rightHand.z > leftHand.z + offsetZ) {
       hidAgent.setCurrentTranslationZ( -delta );
     }
-    if (z < initialZ - offsetZ) {
+    if (rightHand.z < leftHand.z - offsetZ) {
       hidAgent.setCurrentTranslationZ( delta );
     }
   }
