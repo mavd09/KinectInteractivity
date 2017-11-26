@@ -11,9 +11,6 @@ import remixlab.bias.*;
 import remixlab.bias.event.*;
 import remixlab.dandelion.core.*;
 
-import kinect4WinSDK.Kinect;
-import kinect4WinSDK.SkeletonData;
-
 PShader shader;
 PGraphics canvas;
 Scene scene;
@@ -30,9 +27,9 @@ HashMap<Integer, FloatList> groupCenter;
 KinectInteractivityScene kis;
 
 void setup() {
-  size(600, 600, P3D);
-  canvas = createGraphics(width, height, P3D);    
-  scene = new Scene(this, (PGraphics3D) canvas);
+  size(1000, 1000, P3D);
+  canvas = createGraphics(width, height, P3D);  
+  scene = new Scene(this, (PGraphics3D) canvas, 0, 0);
   //colorMode(HSB, 255);
   
   colors = new HashMap<Integer, Integer>();
@@ -61,8 +58,8 @@ void setup() {
   shader.set("maxDepth", scene.radius()*2);
 
   frameRate(1000);
-
-  kis = new KinectInteractivityScene( this, scene );
+  
+  kis = new KinectInteractivityScene( scene, 400, 400 );
 }
 
 void generatePosition(int node, int group) {

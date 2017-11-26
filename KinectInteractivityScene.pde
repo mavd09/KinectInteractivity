@@ -1,3 +1,6 @@
+import kinect4WinSDK.Kinect;
+import kinect4WinSDK.SkeletonData;
+
 static int SN_ID;
 private KinectTrack kinectAgent;
 
@@ -5,6 +8,8 @@ public class KinectInteractivityScene {
   
   final static float DEFAULT_WIDTH_KINECT_SCREEN = 320;
   final static float DEFAULT_HEIGHT_KINECT_SCREEN = 240;
+  final static float DEFAULT_HAND_OFFSET = 40;
+  final static float DEFAULT_DELTA = 0.3;
   
   private float widthKinectScreen = DEFAULT_WIDTH_KINECT_SCREEN;
   private float heightKinectScreen = DEFAULT_HEIGHT_KINECT_SCREEN;
@@ -12,40 +17,36 @@ public class KinectInteractivityScene {
   private float centerKinectScreenX = DEFAULT_WIDTH_KINECT_SCREEN/2.0;
   private float centerKinectScreenY = DEFAULT_HEIGHT_KINECT_SCREEN/2.0;
   
-  private float handOffset = 50;
+  private float handOffset = DEFAULT_HAND_OFFSET;
   private float offsetZ = 1000;
   private float offsetRotation = 3000;
   
-  private float delta = 0.3;
+  private float delta = DEFAULT_DELTA;
   
   private HIDAgent hidAgent;  
   private Position rightHand, leftHand;
   
-  public KinectInteractivityScene( PApplet papplet, Scene scene ) {
+  public KinectInteractivityScene( Scene scene ) {
     // Init Positions 
     rightHand = new Position();
     leftHand = new Position();
-    
     // Kinect specifics
     hidAgent = new HIDAgent(scene);
-    kinectAgent = new KinectTrack(papplet);
+    kinectAgent = new KinectTrack(scene.pApplet());
     scene.eyeFrame().setMotionBinding(SN_ID, "translateRotateXYZ");
-     
     kinectAgent.setUpBodyData();
   }
   
-  public KinectInteractivityScene( PApplet papplet, Scene scene, float widthKinectScreen, float heightKinectScreen ) {
-    this( papplet, scene );
-    
+  public KinectInteractivityScene( Scene scene, float widthKinectScreen, float heightKinectScreen ) {
+    this(scene);
     this.widthKinectScreen = widthKinectScreen;
     this.heightKinectScreen = heightKinectScreen;
-    
     centerKinectScreenX = widthKinectScreen/2.0;
     centerKinectScreenY = heightKinectScreen/2.0;
   }
   
   public void process() {
-    image(kinectAgent.kinect.GetDepth(), 0, 0, widthKinectScreen, heightKinectScreen);
+    drawKinectScreen();
     drawSafeZone();
     drawRotationZones();
     for( int i = 0; i < min( 1, kinectAgent.bodies.size() ); i++ ) {
@@ -61,7 +62,35 @@ public class KinectInteractivityScene {
     }
   }
   
+  private void drawKinectScreen() {
+    scene.beginScreenDrawing();
+    image(kinectAgent.kinect.GetDepth(), 0, 0, widthKinectScreen, heightKinectScreen);
+    scene.endScreenDrawing();
+  }
+  
+  private void drawSafeZone() {
+    scene.beginScreenDrawing();
+    pushStyle();
+    strokeWeight(2);
+    noFill();
+    ellipse(centerKinectScreenX, centerKinectScreenY, handOffset*2, handOffset*2);
+    popStyle();
+    scene.endScreenDrawing();
+  }
+  
+  private void drawRotationZones() {
+    scene.beginScreenDrawing();
+    pushStyle();
+    stroke(234, 223, 21);
+    noFill();
+    rect(0, centerKinectScreenY - handOffset, widthKinectScreen, handOffset*2);
+    rect(centerKinectScreenX - handOffset, 0, handOffset*2, heightKinectScreen);
+    popStyle();
+    scene.endScreenDrawing();
+  }
+  
   private void drawHandsHelpers() {
+    scene.beginScreenDrawing();
     pushStyle();
     fill(255, 0 ,0);
     noStroke();
@@ -69,14 +98,14 @@ public class KinectInteractivityScene {
     fill(0, 255,0);
     ellipse( leftHand.x, leftHand.y, 25, 25 );
     popStyle();
+    scene.endScreenDrawing();
   } 
   
   // processing rotation movement
   public void processKinectMovement(){
     drawHandsHelpers();
     // Only process the changes where the hand is currently.
-    hidAgent.setCurrentEye( new Position() );
-    hidAgent.setCurrentRotation( new Position() );
+    hidAgent.reset( );
     if (isInSafeZone(leftHand)) {
       if (isInSafeZone(rightHand)) {
         processZoom();
@@ -94,11 +123,11 @@ public class KinectInteractivityScene {
     return hand.y > centerKinectScreenY - handOffset && hand.y < centerKinectScreenY + handOffset;
   }
   
-  private boolean isInRotationYZone(Position hand){
+  private boolean isInRotationYZone(Position hand) {
     return hand.x > centerKinectScreenX - handOffset && hand.x < centerKinectScreenX + handOffset;
   }
   
-  private void processRotation() {
+  private void processRotation( ) {
     if (isInRotationXZone(leftHand) && isInRotationXZone(rightHand)) {
       hidAgent.setCurrentRotationY(getRotationValue());
     } else if (isInRotationYZone(leftHand) && isInRotationYZone(rightHand)) {
@@ -108,7 +137,7 @@ public class KinectInteractivityScene {
     }
   }
   
-  private float getRotationValue(){
+  private float getRotationValue( ) {
     float rightZ = rightHand.z;
     float leftZ = leftHand.z;
     float dist = abs(rightZ - leftZ);
@@ -122,14 +151,14 @@ public class KinectInteractivityScene {
     return 0;
   }
   
-  private void processZoom(){
+  private void processZoom( ) {
     float initialZ = leftHand.z;
     float z = rightHand.z;
     if (z > initialZ + offsetZ) {
-      hidAgent.setCurrentEyeZ( -delta );
+      hidAgent.setCurrentTranslationZ( -delta );
     }
     if (z < initialZ - offsetZ) {
-      hidAgent.setCurrentEyeZ( delta );
+      hidAgent.setCurrentTranslationZ( delta );
     }
   }
   
@@ -139,32 +168,15 @@ public class KinectInteractivityScene {
     if (dist > handOffset) {
       // X-axis
       if (hand.x > centerKinectScreenX + handOffset)
-        hidAgent.setCurrentEyeX( delta );
+        hidAgent.setCurrentTranslationX( delta );
       if (hand.x < centerKinectScreenX - handOffset)
-        hidAgent.setCurrentEyeX( -delta );
+        hidAgent.setCurrentTranslationX( -delta );
       // Y-axis
       if (hand.y > centerKinectScreenY + handOffset)
-        hidAgent.setCurrentEyeY( delta );
+        hidAgent.setCurrentTranslationY( delta );
       if (hand.y < centerKinectScreenY - handOffset)
-        hidAgent.setCurrentEyeY( -delta );
+        hidAgent.setCurrentTranslationY( -delta );
     }
-  }
-  
-  private void drawSafeZone() {
-    pushStyle();
-    strokeWeight(2);
-    noFill();
-    ellipse(centerKinectScreenX, centerKinectScreenY, handOffset*2, handOffset*2);
-    popStyle();
-  }
-  
-  private void drawRotationZones(){
-    pushStyle();
-    stroke(234, 223, 21);
-    noFill();
-    rect(0, centerKinectScreenY - handOffset, widthKinectScreen, handOffset*2);
-    rect(centerKinectScreenX - handOffset, 0, handOffset*2, heightKinectScreen);
-    popStyle();
   }
   
   private boolean isInSafeZone( Position hand ) {
